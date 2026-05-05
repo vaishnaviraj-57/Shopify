@@ -1,0 +1,44 @@
+{% comment %}
+  Renders a sticky Add to Cart bar for the Product Detail Page.
+  Accepts:
+  - product: {Object} product object.
+  - section: {Object} section object.
+{% endcomment %}
+
+{{ 'component-sticky-atc.css' | asset_url | stylesheet_tag }}
+
+<div id="sticky-atc-bar" class="sticky-atc" data-product-id="{{ product.id }}">
+  <div class="page-width">
+    <div class="sticky-atc__container">
+      <div class="sticky-atc__info">
+        <h3 class="sticky-atc__title h4">{{ product.title | truncate: 50 }}</h3>
+        <div class="sticky-atc__price" id="sticky-price-{{ section.id }}">
+          {%- render 'price', product: product, use_variant: true, show_badges: false -%}
+        </div>
+      </div>
+
+      <div class="sticky-atc__actions">
+        <product-form class="product-form" data-section-id="{{ section.id }}">
+          {%- form 'product', product, id: 'sticky-atc-form', class: 'form', novalidate: 'novalidate', data-type: 'add-to-cart-form' -%}
+            <input type="hidden" name="id" value="{{ product.selected_or_first_available_variant.id }}" class="product-variant-id">
+            <button
+              type="submit"
+              name="add"
+              class="product-form__submit button button--primary sticky-atc__button"
+              {% if product.selected_or_first_available_variant.available == false %}disabled{% endif %}
+            >
+              <span>
+                {%- if product.selected_or_first_available_variant.available -%}
+                  {{ 'products.product.add_to_cart' | t }}
+                {%- else -%}
+                  {{ 'products.product.sold_out' | t }}
+                {%- endif -%}
+              </span>
+              {%- render 'loading-spinner' -%}
+            </button>
+          {%- endform -%}
+        </product-form>
+      </div>
+    </div>
+  </div>
+</div>
