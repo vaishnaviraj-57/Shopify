@@ -1,0 +1,78 @@
+{% comment %}
+  Product Offers Section
+  Dynamically display offers based on product tags and customizer configuration.
+{% endcomment %}
+
+
+  <div class="product-offers">
+    <h3 class="offers-title">Available Offers</h3>
+
+    {% assign product_tags = product.tags %}
+    {% assign matching_offers = "" %}
+
+    {% for block in section.blocks %}
+      {% assign offer_tags = block.settings.offer_tags | split: ',' %}
+
+      {% assign show_offer = false %}
+      {% for tag in product_tags %}
+        {% if offer_tags contains tag %}
+          {% assign show_offer = true %}
+        {% endif %}
+      {% endfor %}
+
+      {% if show_offer %}
+        {% capture offer_output %}
+          {% assign offer_type = block.settings.offer_type %}
+          {% assign offer_value = block.settings.offer_value %}
+          {% assign price_limit = block.settings.price_limit %}
+
+          {% assign offer_content = block.settings.offer_content %}
+          
+          {%- comment -%}
+            Replace placeholders dynamically
+          {%- endcomment -%}
+          {% assign offer_content = offer_content
+            | replace: '<Offer Amount>', offer_value
+            | replace: '<Price Amount>', price_limit
+            | replace: '{{Offer Amount}}', offer_value
+            | replace: '{{Price Amount}}', price_limit
+          %}
+          
+          <div class="offer-item">
+            {% if block.settings.offer_icon %}
+              <img src="{{ block.settings.offer_icon | img_url: '50x' }}" alt="Offer Icon" class="offer-icon" />
+            {% endif %}
+            
+            <div class="offer-text">
+              {{ offer_content }}
+            </div>
+          </div>
+        {% endcapture %}
+        {{ offer_output }}
+      {% endif %}
+    {% endfor %}
+  </div>
+
+
+
+<style>
+.product-offers {
+  border-top: 1px solid #eee;
+  padding-top: 15px;
+  margin-top: 20px;
+}
+.offer-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.offer-icon {
+  width: 32px;
+  height: 32px;
+  margin-right: 10px;
+}
+.offer-text {
+  font-size: 14px;
+  line-height: 1.4;
+}
+</style>

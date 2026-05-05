@@ -1,0 +1,238 @@
+<div class="offers-section">
+  {% if offers_heading != blank %}
+  <h3>{{ heading }}</h3>
+  {% endif %}
+  <ul class="offers-list">
+    {% assign matched_offers = 0 %}
+
+    {% for offer in offers %}
+      {% assign offer_tags = offer.settings.offer_tags | split: ',' %}
+      {% assign matched = false %}
+      {% for tag in offer_tags %}
+        {% assign clean_tag = tag | strip %}
+        {% if product.tags contains clean_tag %}
+            {% assign matched = true %}
+        {% endif %}
+      {% endfor %}
+
+      {% if matched %}
+        {% assign matched_offers = matched_offers | plus: 1 %}
+        {% assign hidden_class = '' %}
+        {% if matched_offers > 3 %}
+          {% assign hidden_class = 'offer-hidden' %}
+        {% endif %}
+
+        {%- comment -%} --- Compute amounts --- {%- endcomment -%}
+        {% assign offer_type = offer.settings.offer_type %}
+        {% assign offer_amount = offer.settings.offer_amount | plus: 0 %}
+
+        {% if offer_type == 'percentage' %}
+            {% assign display_offer_amount = offer_amount | append: '%' %}
+            {%- comment -%}
+                product.price is in cents → divide by 100 to get real currency first
+            {%- endcomment -%}
+            {% assign original_price = product.price | divided_by: 100 %}
+            {% assign discount_value = original_price | times: offer_amount | divided_by: 100 %}         
+            {% assign discounted_price = original_price | minus: discount_value %}
+            {% assign display_price_amount = discounted_price | round %}
+            {% else %}
+            {% assign fixed_amount = offer_amount | round %}
+            {% assign display_offer_amount = 'Rs. ' | append: fixed_amount %}
+            {% assign original_price = product.price | divided_by: 100 %}
+            {% assign discounted_price = original_price | minus: offer_amount %}
+            {% assign display_price_amount = discounted_price | round %}
+        {% endif %}
+
+        {% assign extra_text = offer.settings.extra_template %}
+        {% assign offer_amount_html = '<strong>' | append: display_offer_amount | append: '</strong>' %}
+        {% assign extra_text = extra_text | replace: '[offer_amount]', offer_amount_html %}
+
+        {% assign use_code_text = offer.settings.use_code_template %}
+        {% assign code_html = '<strong>' | append: offer.settings.offer_code | append: '</strong>' %}
+        {% assign use_code_text = use_code_text | replace: '[code]', code_html %}
+
+        <li class="offer-item {{ hidden_class }}">
+            {% if offer.settings.offer_icon %}
+                <div class="offer-icon-wrapper">
+                <img src="{{ offer.settings.offer_icon | img_url: '80x80' }}" class="offer-icon" alt="Offer icon">
+                </div>
+            {% endif %}
+
+            <div class="offer-content">
+                <div class="offer-heading">{{ extra_text }}</div>
+                <div class="offer-code">{{ use_code_text }}</div>
+                <div class="offer-price">
+                    {{ offer.settings.discounted_price_label }}
+                    <span class="discounted">Rs. {{ display_price_amount }}</span>
+                    <span class="strike">Rs. {{ original_price | round }}</span>
+                </div>
+            </div>
+        </li>
+
+      {% endif %}
+    {% endfor %}
+</ul>
+
+<div class="offers-note">{{ offers_note }}</div>
+
+{% if matched_offers > 3 %}
+<a class="view-more-offers" id="view-more-offers">View more</a>
+{% endif %}
+
+</div>
+
+<style>
+.offers-section {
+  background: #fff;
+  border-top: 1px solid #ddd;
+  border-bottom: 1px solid #ddd;
+  border-radius: 0;
+  padding: 15px 0;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  color: #111;
+  margin-top: 25px;
+}
+
+.offers-section h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #000;
+  margin-bottom: 16px;
+  text-transform: uppercase;
+}
+
+.offers-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.offer-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 0;
+  {% comment %} border-bottom: 1px solid #eee; {% endcomment %}
+}
+
+.offer-item:last-child {
+  border-bottom: none;
+}
+
+/* ICON CIRCLE (yellow border) */
+.offer-icon-wrapper {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  border: 2px solid #FFD84D; /* yellow border */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.offer-icon {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+}
+
+/* OFFER TEXT SECTION */
+.offer-content {
+  flex: 1;
+}
+
+.offer-heading {
+  font-weight: 700;
+  font-size: 14px;
+  color: #000;
+  margin-bottom: 3px;
+}
+
+.offer-code {
+  font-size: 13px;
+  color: #333;
+  margin-bottom: 3px;
+}
+
+.offer-price {
+  font-size: 13px;
+  color: #111;
+}
+
+.offer-price .discounted {
+  font-weight: 600;
+  color: #000;
+  margin-left: 4px;
+}
+
+.offer-price .strike {
+  text-decoration: line-through;
+  color: #999;
+  font-weight: normal;
+  margin-left: 6px;
+}
+
+/* View more link */
+.view-more-offers {
+  display: block;
+  text-align: right;
+  font-size: 13px;
+  font-weight: 500;
+  color: #222;
+  cursor: pointer !important;
+  margin-top: 8px;
+  transition: color 0.2s ease;
+  text-decoration: none;
+}
+
+.view-more-offers:hover {
+  color: #000;
+  text-decoration: underline;
+}
+
+/* Hide extra offers initially */
+.offer-hidden {
+  display: none;
+}
+
+/* Offer note text */
+.offers-note {
+  font-size: 12px;
+  {% comment %} color: #666; {% endcomment %}
+  padding: 8px 15px 0;
+  line-height: 1.4;
+}
+
+</style>
+
+<script>
+{% comment %} document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('.view-more-offers').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const section = btn.closest('.offers-section');
+      section.querySelectorAll('.offer-hidden').forEach(el => el.classList.remove('offer-hidden'));
+      btn.remove();
+    });
+  });
+}); {% endcomment %}
+
+
+
+
+document.addEventListener("DOMContentLoaded", function() {
+  var viewMore = document.getElementById('view-more-offers');
+  var hiddenOffers = document.querySelectorAll('.offer-hidden');
+  if (!viewMore || hiddenOffers.length === 0) return;
+
+  viewMore.addEventListener('click', function() {
+    hiddenOffers.forEach(function(offer) {
+      offer.classList.toggle('offer-hidden');
+    });
+    viewMore.textContent =
+      viewMore.textContent === 'View more' ? 'View less' : 'View more';
+  });
+});
+
+
+</script>

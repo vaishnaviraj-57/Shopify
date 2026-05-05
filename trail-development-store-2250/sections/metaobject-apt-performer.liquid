@@ -1,0 +1,50 @@
+{% schema %}
+{
+  "name": "Metaobject apt location",
+  "blocks": [
+    {
+      "type": "event_calendar",
+      "name": "Event Calendar",
+      "settings": [
+        {
+          "type": "checkbox",
+          "id": "show_filters",
+          "label": "Filter anzeigen",
+          "default": true
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "Event Calendar",
+      "blocks": [
+        {
+          "type": "event_calendar",
+          "settings": {
+            "show_filters": true
+          }
+        }
+      ]
+    }
+  ]
+}
+{% endschema %}
+
+{% stylesheet %}
+  /* Optional CSS */
+{% endstylesheet %}
+
+{% javascript %}
+  /* Optional JS */
+{% endjavascript %}
+
+<!-- Block-Rendering -->
+{% for block in section.blocks %}
+  {% case block.type %}
+    {% when 'event_calendar' %}
+      {% render block %}
+    {% else %}
+      <!-- Unbekannter Block -->
+  {% endcase %}
+{% endfor %}

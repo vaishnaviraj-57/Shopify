@@ -1,0 +1,571 @@
+{% comment %}
+  New Arrivals Featured Section
+  - Same structure as featured-collection
+  - Source: collections['all']
+  - Shows only products published within last X days (section.settings.new_days)
+  - Keeps image block, schema and styles
+  - No placeholders; shows "No new products available." if none
+{% endcomment %}
+
+{{ 'component-card.css' | asset_url | stylesheet_tag }}
+{{ 'component-price.css' | asset_url | stylesheet_tag }}
+{{ 'component-slider.css' | asset_url | stylesheet_tag }}
+{{ 'template-collection.css' | asset_url | stylesheet_tag }}
+{{ 'component-rating.css' | asset_url | stylesheet_tag }}
+<script src="{{ 'product-form.js' | asset_url }}" defer="defer"></script>
+{% unless product.has_only_default_variant %}
+  {{ 'component-product-variant-picker.css' | asset_url | stylesheet_tag }}
+  {{ 'component-swatch-input.css' | asset_url | stylesheet_tag }}
+  {{ 'component-swatch.css' | asset_url | stylesheet_tag }}
+{% endunless %}
+
+{%- if settings.enable_quick_add -%}
+    {{ 'quick-add.css' | asset_url | stylesheet_tag }}
+    <script src="{{ 'quick-add.js' | asset_url }}" defer="defer"></script>
+    <script src="{{ 'product-info.js' | asset_url }}" defer="defer"></script>
+{%- endif -%}
+{% if settings.image_shape == 'blob' %}
+  {{ 'mask-blobs.css' | asset_url | stylesheet_tag }}
+{%- endif -%}
+
+{%- liquid
+  # image ratio fallback
+  assign ratio = section.settings.image.aspect_ratio
+  if ratio == 0 or ratio == null
+    assign ratio = 1
+  endif
+
+  # compute products_to_display placeholder
+  assign products_to_display = section.settings.products_to_show | plus: 0
+
+  assign columns_mobile_int = section.settings.columns_mobile | plus: 0
+  assign show_mobile_slider = false
+  if section.settings.swipe_on_mobile and products_to_display > columns_mobile_int
+    assign show_mobile_slider = true
+  endif
+  assign show_desktop_slider = false
+  if section.settings.enable_desktop_slider and products_to_display > section.settings.columns_desktop
+    assign show_desktop_slider = true
+  endif
+-%}
+
+{%- style -%}
+.section-{{ section.id }}-padding {
+  padding-top: {{ section.settings.padding_top }}px;
+  padding-bottom: {{ section.settings.padding_bottom }}px;
+}
+.section-{{ section.id }} #Slider-{{ section.id }} {
+  overflow: hidden;
+}
+@media screen and (max-width: 991px) {
+  .section-{{ section.id }}-padding {
+    padding-top: {{ section.settings.padding_top | times: 0.5 | round: 0 }}px;
+    padding-bottom: {{ section.settings.padding_bottom | times: 0.5 | round: 0 }}px;
+  }
+}
+{%- endstyle -%}
+
+{%- comment -%}
+  New Arrivals logic:
+  - cutoff timestamp = now - new_days*86400
+  - new_count counts matching products in collections['all']
+  - we render up to section.settings.products_to_show
+{%- endcomment -%}
+
+{%- assign now = 'now' | date: "%s" | plus: 0 -%}
+{%- assign days_in_seconds = section.settings.new_days | times: 86400 | plus: 0 -%}
+{%- assign cutoff = now | minus: days_in_seconds | plus: 0 -%}
+
+{%- assign sorted_products = collections['all'].products | sort: 'published_at' | reverse -%}
+
+{%- assign new_count = 0 -%}
+{%- for product in sorted_products -%}
+  {%- assign published_time = product.published_at | date: "%s" | plus: 0 -%}
+  {%- if published_time > cutoff -%}
+    {%- assign new_count = new_count | plus: 1 -%}
+  {%- endif -%}
+{%- endfor -%}
+
+<div class="{% unless section.settings.arrow_position == 'inline' %}slider-arrow-{{ section.settings.arrow_style }} {% endunless %}color-{{ section.settings.color_scheme }} isolate gradient feaprod {% if section.settings.image != blank %} image_with_product {% endif %}">
+    <div class="collection section-{{ section.id }}-padding">
+        <slider-component id="Slider-{{ section.id }}" class="slider-mobile-gutter {% if show_desktop_slider %} slider-component-desktop{% endif %} {% if section.settings.image != blank %} img_with_product {% endif %}{% if settings.animations_reveal_on_scroll %} scroll-trigger animate--slide-in{% endif %}">
+          
+            <div class="heading-top page-width {{ section.settings.heading_alignment }}">
+              <div class="heading inline-richtext {{ section.settings.heading_alignment }}">
+                {%- if section.settings.miniheading != blank -%}
+                  <span class="{{ section.settings.heading_alignment }}">
+                    <span class="offer_pills {% if section.settings.mini_heading_style == 'button' %}offer_pills_button {% elsif section.settings.mini_heading_style == 'outline' %}offer_pills_outline {% else section.settings.mini_heading_style == 'link' %}offer_pills_link {% endif %} rte">
+                      {{ section.settings.miniheading }}
+                    </span>
+                  </span>
+                {%- endif %}
+                {%- if section.settings.title != blank -%}
+                  <h2 class="{{ section.settings.heading_size }} {{ section.settings.heading_alignment }}">{{ section.settings.title }}</h2>
+                {%- endif -%}
+                {%- if section.settings.description != blank
+                or section.settings.show_description
+                and section.settings.collection.description != empty
+                -%}
+                  <div class="description {{ section.settings.description_style }} rte {{ section.settings.heading_alignment }}">
+                    {%- if section.settings.show_description -%}
+                      {{ section.settings.collection.description }}
+                    {%- else -%}
+                      {{ section.settings.description -}}
+                    {%- endif %}
+                  </div>
+                {%- endif -%}
+              </div>
+              <div class="wb_button_combo {% unless section.settings.show_view_all %}bcombo_auto{% endunless %}">
+                {%- comment -%}
+                  View all button links to your hidden All collection (if present) when there are more products than shown
+                {%- endcomment -%}
+                {%- assign more_in_collection = false -%}
+                {%- if new_count > section.settings.products_to_show -%}
+                  {%- assign more_in_collection = true -%}
+                {%- endif -%}
+
+                {%- if section.settings.show_view_all and more_in_collection -%}
+                  <div class="wb_home_sbtn">      
+                    <a href="{{ collections['all'].url }}" class="{% if section.settings.view_all_style == 'link' %}link {% elsif section.settings.view_all_style == 'solid' %}button{% else %}button button--secondary{% endif %}" aria-label="{{ 'sections.featured_collection.view_all' | t: collection_name: section.settings.collection.title }}">
+                      {{ 'sections.featured_collection.view_all' | t }}
+                    </a>
+                  </div>
+                {%- endif -%}
+
+                {% if section.settings.arrow_position == 'top' %}
+                  <div class="wb_home_sbtn slider-buttons no-js-hidden {% if section.settings.collection != blank or section.settings.product_list != blank %}{% unless show_desktop_slider %} desktop-arrows-hide {% endunless %} {% unless show_mobile_slider %} mobile-arrows-hide {% endunless %}{% else %} {% if section.settings.enable_desktop_slider == false or section.settings.columns_desktop >= section.settings.products_to_show %} desktop-arrows-hide {% endif %}{% if section.settings.swipe_on_mobile == false %} mobile-arrows-hide {% endif %} {% endif %} {% if section.settings.columns_desktop == 5 and products_to_display == 5 %}desktop-arrows-show{% endif %}{% if section.settings.products_to_show == 2 and section.settings.columns_desktop >= 2 %}tablet-arrow-hide{% endif %}{% if section.settings.columns_desktop == 2 %}{% unless section.settings.products_to_show > 2 %} tablet-arrows-hide{% endunless %}{% else %}{% unless section.settings.products_to_show > 3 %} tablet-arrows-hide{% endunless %}{% endif %}">
+                    <button
+                    type="button"
+                    class="slider-button slider-button--prev button"
+                    name="previous"
+                    aria-label="{{ 'general.slider.previous_slide' | t }}"
+                    id="slider-button--prev-{{ section.id }}"
+                    aria-controls="Slider-{{ section.id }}">
+                    {% render 'icon-caret' %}
+                    </button>
+                    <button
+                        type="button"
+                        class="slider-button slider-button--next button"
+                        name="next"
+                        aria-label="{{ 'general.slider.next_slide' | t }}"
+                        id="slider-button--next-{{ section.id }}"
+                        aria-controls="Slider-{{ section.id }}">
+                      {% render 'icon-caret' %}
+                    </button>
+                  </div>
+                {%- endif -%}
+              </div>
+            </div>
+
+            <div class="slider-arrow-{{ section.settings.arrow_style }} page-width{% if section.settings.sec_full_width == true %} section_web{% endif %}">
+              <div class="section__wrapper {% if section.settings.image != blank %} grid {% endif %}">
+                  {% if section.settings.image != blank %}
+                    <div class="global-media-settings {% if settings.animations_reveal_on_scroll %} scroll-trigger animate--slide-in{% endif %} {% if section.settings.image != blank %} image__part grid__item {% endif %} grid--{{ section.settings.columns_mobile }}-col-tablet-down" style="background-image: url('{{ section.settings.image | image_url: width: 400 }}');">
+                      {%- if section.settings.button_label == blank and section.settings.button_link != blank -%}
+                        <a class="full-image-link" href="{{ section.settings.button_link }}"></a>
+                      {%- endif -%}
+                      <div class="image_wrapper wbtxt--{{ section.settings.box_align }} wbtxtc--{{ section.settings.text_alignment }} {% if section.settings.show_text_box == false %} b-transparent{% endif %}">
+                        <div class="content_wrapper content-container color-{{ section.settings.imgcolor_scheme }} gradient">
+                          {% if section.settings.sub_heading != blank %}
+                              <p class="content_subheading">{{ section.settings.sub_heading }}</p>
+                          {% endif %}
+                          {% if section.settings.heading != blank %}
+                              <h3 class="content__heading">{{ section.settings.heading }}</h3>
+                          {% endif %} 
+                          {% if section.settings.button_label != blank %}
+                              <a {% if section.settings.button_link %}href="{{ section.settings.button_link }}" {% else %} role="link" aria-disabled="true" {% endif %} 
+                                {% if section.settings.link_window %} target="_blank" {% endif %}
+                            class="{% if section.settings.button_style_secondary == 'link' %} link link underlined-link{% elsif section.settings.button_style_secondary == 'solid' %}button{% else %}button button--secondary{% endif %}">{{ section.settings.button_label }}</a>
+                          {% endif %}
+                        </div>
+                      </div>
+                    </div>
+                  {% endif %}
+                  <div class="{% if section.settings.image != blank %}pro-part grid__item {% endif %} section__wrap grid--{{ section.settings.columns_mobile }}-col-tablet-down {% if section.settings.arrow_position == 'inline' %} relative{% endif %}">
+                    {% if section.settings.arrow_position == 'inline' %}
+                      <div class="wb_home_sbtn slider-buttons no-js-hidden {% if section.settings.collection != blank or section.settings.product_list != blank %}{% unless show_desktop_slider %} desktop-arrows-hide {% endunless %} {% unless show_mobile_slider %} mobile-arrows-hide {% endunless %}{% else %} {% if section.settings.enable_desktop_slider == false or section.settings.columns_desktop >= section.settings.products_to_show %} desktop-arrows-hide {% endif %}{% if section.settings.swipe_on_mobile == false %} mobile-arrows-hide {% endif %} {% endif %} {% if section.settings.columns_desktop == 5 and products_to_display == 5 %}desktop-arrows-show{% endif %}{% if section.settings.products_to_show == 2 and section.settings.columns_desktop >= 2 %}tablet-arrow-hide{% endif %}{% if section.settings.columns_desktop == 2 %}{% unless section.settings.products_to_show > 2 %} tablet-arrows-hide{% endunless %}{% else %}{% unless section.settings.products_to_show > 3 %} tablet-arrows-hide{% endunless %}{% endif %}">
+                        <button
+                        type="button"
+                        class="slider-button-inline slider-button slider-button--prev button"
+                        name="previous"
+                        aria-label="{{ 'general.slider.previous_slide' | t }}"
+                        id="slider-button--prev-{{ section.id }}"
+                        aria-controls="Slider-{{ section.id }}">
+                        {% render 'icon-caret' %}
+                        </button>
+                      </div>
+                    {%- endif -%}
+
+                    {%- comment -%}
+                      Render NEW products from collections['all'] (filter by published_at > cutoff)
+                      Limit to section.settings.products_to_show
+                    {%- endcomment -%}
+
+                    {%- assign limit = section.settings.products_to_show | plus: 0 -%}
+                    <ul id="Slider-{{ section.id }}"
+                        class="grid product-grid contains-card contains-card--product{% if settings.card_style == 'standard' %} contains-card--standard{% endif %} grid--{{ section.settings.columns_desktop }}-col-desktop{% if section.settings.collection == blank %} {% if section.settings.columns_desktop > 2 %} grid--3-col-tablet{% else %}grid--2-col-tablet{% endif %} grid--2-col-tablet-down{% else %} grid--{{ section.settings.columns_mobile }}-col-tablet-down{% endif %}{% if show_mobile_slider or show_desktop_slider %} slider{% if show_desktop_slider %} slider--desktop{% endif %}{% if show_mobile_slider %} slider--tablet{% endif %}{% endif %} {% if section.settings.columns_desktop > 2 %} grid--3-col-tablet{% else %}grid--2-col-tablet{% endif %} {% if section.settings.columns_desktop == 5 and products_to_display == 5 %} slider--desktop {% endif %}"
+                        role="list"
+                        aria-label="{{ 'general.slider.name' | t }}">
+
+                      {%- assign printed = 0 -%}
+                      {%- for product in sorted_products -%}
+                        {%- if printed >= limit -%}
+                          {%- break -%}
+                        {%- endif -%}
+                        {%- assign published_time = product.published_at | date: "%s" | plus: 0 -%}
+                        {%- if published_time > cutoff -%}
+                          <li id="Slide-{{ section.id }}-{{ forloop.index }}"
+                              class="grid__item{% if show_mobile_slider or show_desktop_slider %} slider__slide{% endif %}">
+                            {% render 'card-product',
+                              card_product: product, 
+                              show_quantity: settings.show_quantity,
+                              media_aspect_ratio: settings.image_ratio,
+                              show_secondary_image: settings.show_secondary_image,
+                              enable_price_below: settings.enable_price_below,
+                              show_vendor: settings.show_vendor,
+                              show_colorswatch: settings.show_colorswatch,
+                              show_rating: settings.show_rating,
+                              show_quick_add: settings.enable_quick_add,
+                              show_variants: settings.show_variants,
+                              picker_type: settings.picker_type,
+                              image_shape: settings.image_shape,
+                              show_colorvariant: settings.show_colorvariant,
+                              atc_btn_position: settings.atc_btn_position,
+                              atc_btn_style: settings.atc_btn_style,
+                              on_img_on_hover: settings.on_img_on_hover,
+                              quick_position: settings.quick_position,
+                              section_id: section.id %}
+                          </li> 
+                          {%- assign printed = printed | plus: 1 -%}
+                        {%- endif -%}
+                      {%- endfor -%}
+
+                      {%- if printed == 0 -%}
+                        <li class="grid__item">
+                          <div style="text-align:center;padding:20px;">No new products available.</div>
+                        </li>
+                      {%- endif -%}
+                    </ul>
+
+                    {% if section.settings.arrow_position == 'inline' %}
+                      <div class="wb_home_sbtn slider-buttons no-js-hidden 
+                        {% if section.settings.collection != blank or section.settings.product_list != blank %}{% unless show_desktop_slider %} desktop-arrows-hide {% endunless %} {% unless show_mobile_slider %} mobile-arrows-hide {% endunless %}{% else %} {% if section.settings.enable_desktop_slider == false or section.settings.columns_desktop >= section.settings.products_to_show %} desktop-arrows-hide {% endif %}{% if section.settings.swipe_on_mobile == false %} mobile-arrows-hide {% endif %} {% endif %} {% if section.settings.columns_desktop == 5 and products_to_display == 5 %}desktop-arrows-show{% endif %}{% if section.settings.products_to_show == 2 and section.settings.columns_desktop >= 2 %}tablet-arrow-hide{% endif %}{% if section.settings.columns_desktop == 2 %}{% unless section.settings.products_to_show > 2 %} tablet-arrows-hide{% endunless %}{% else %}{% unless section.settings.products_to_show > 3 %} tablet-arrows-hide{% endunless %}{% endif %}">
+                        <button
+                            type="button"
+                            class="slider-button-inline slider-button slider-button--next button"
+                            name="next"
+                            aria-label="{{ 'general.slider.next_slide' | t }}"
+                            id="slider-button--next-{{ section.id }}"
+                            aria-controls="Slider-{{ section.id }}">
+                          {% render 'icon-caret' %}
+                        </button>
+                      </div>
+                    {%- endif -%}
+                  </div>
+              </div>
+            </div>
+            {% if section.settings.arrow_position == 'bottom' %}
+              <div class="wb_home_sbtn slider-buttons button-bottom no-js-hidden {% if section.settings.collection != blank or section.settings.product_list != blank %}{% unless show_desktop_slider %} desktop-arrows-hide {% endunless %} {% unless show_mobile_slider %} mobile-arrows-hide {% endunless %}{% else %} {% if section.settings.enable_desktop_slider == false or section.settings.columns_desktop >= section.settings.products_to_show %} desktop-arrows-hide {% endif %}{% if section.settings.swipe_on_mobile == false %} mobile-arrows-hide {% endif %} {% endif %}
+                {% if section.settings.columns_desktop == 5 and products_to_display == 5 %}desktop-arrows-show{% endif %}{% if section.settings.products_to_show == 2 and section.settings.columns_desktop >= 2 %}tablet-arrow-hide{% endif %}{% if section.settings.columns_desktop == 2 %}{% unless section.settings.products_to_show > 2 %} tablet-arrows-hide{% endunless %}{% else %}{% unless section.settings.products_to_show > 3 %} tablet-arrows-hide{% endunless %}{% endif %}">
+                <button
+                type="button"
+                class="slider-button slider-button--prev button"
+                name="previous"
+                aria-label="{{ 'general.slider.previous_slide' | t }}"
+                id="slider-button--prev-{{ section.id }}"
+                aria-controls="Slider-{{ section.id }}">
+                {% render 'icon-caret' %}
+                </button>
+                <button
+                    type="button"
+                    class="slider-button slider-button--next button"
+                    name="next"
+                    aria-label="{{ 'general.slider.next_slide' | t }}"
+                    id="slider-button--next-{{ section.id }}"
+                    aria-controls="Slider-{{ section.id }}">
+                  {% render 'icon-caret' %}
+                </button>
+              </div>
+            {%- endif -%}
+        </slider-component>
+    </div>
+    {% if settings.image_shape == 'arch' %}
+      {% render 'mask-arch' %}
+    {%- endif -%}
+</div>
+
+{% schema %}
+{
+  "name": "New Arrivals",
+  "tag": "section",
+  "class": "section section-featured-collection",
+  "disabled_on": {
+    "groups": ["header", "footer"]
+  },
+  "settings": [
+    {
+      "type": "checkbox",
+      "id": "sec_full_width",
+      "label": "Full width section",
+      "default": true
+    },
+    {
+      "type": "inline_richtext",
+      "id": "miniheading",
+      "label": "Mini heading"
+    },
+    {
+      "type": "select",
+      "id": "mini_heading_style",
+      "options": [
+        { "value": "button", "label": "Button" },
+        { "value": "outline", "label": "Outline" },
+        { "value": "link", "label": "Link" }
+      ],
+      "default": "outline",
+      "label": "Mini heading style"
+    },
+    {
+      "type": "inline_richtext",
+      "id": "title",
+      "default": "New Arrivals",
+      "label": "Title"
+    },
+    {
+      "type": "select",
+      "id": "heading_size",
+      "options": [
+        { "value": "h2", "label": "H2" },
+        { "value": "h1", "label": "H1" },
+        { "value": "h0", "label": "H0" }
+      ],
+      "default": "h0",
+      "label": "Heading size"
+    },
+    {
+      "type": "select",
+      "id": "heading_alignment",
+      "label": "Heading alignment",
+      "options": [
+        { "value": "left", "label": "Left" },
+        { "value": "center", "label": "Center" }
+      ],
+      "default": "left"
+    },
+    {
+      "type": "richtext",
+      "id": "description",
+      "label": "Description"
+    },
+
+    /* IMAGE BLOCK SETTINGS — USED */
+    {
+      "type": "image_picker",
+      "id": "image",
+      "label": "Image"
+    },
+    {
+      "type": "select",
+      "id": "box_align",
+      "options": [
+        { "value": "top", "label": "Top" },
+        { "value": "middle", "label": "Middle" },
+        { "value": "bottom", "label": "Bottom" }
+      ],
+      "default": "top",
+      "label": "Image box vertical alignment"
+    },
+    {
+      "type": "select",
+      "id": "text_alignment",
+      "options": [
+        { "value": "left", "label": "Left" },
+        { "value": "center", "label": "Center" },
+        { "value": "right", "label": "Right" }
+      ],
+      "default": "center",
+      "label": "Image text alignment"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_text_box",
+      "label": "Show text box background",
+      "default": false
+    },
+    {
+      "type": "color_scheme",
+      "id": "imgcolor_scheme",
+      "label": "Image block color scheme",
+      "default": "background-1"
+    },
+    {
+      "type": "text",
+      "id": "heading",
+      "label": "Image heading",
+      "default": "Heading"
+    },
+    {
+      "type": "text",
+      "id": "sub_heading",
+      "label": "Image subheading",
+      "default": "Sub Heading"
+    },
+    {
+      "type": "text",
+      "id": "button_label",
+      "label": "Image button label",
+      "default": "Shop Now"
+    },
+    {
+      "type": "url",
+      "id": "button_link",
+      "label": "Image button link"
+    },
+    {
+      "type": "checkbox",
+      "id": "link_window",
+      "label": "Open link in new tab",
+      "default": true
+    },
+    {
+      "type": "select",
+      "id": "button_style_secondary",
+      "label": "Image button style",
+      "options": [
+        { "value": "link", "label": "Link" },
+        { "value": "outline", "label": "Outline" },
+        { "value": "solid", "label": "Solid" }
+      ],
+      "default": "link"
+    },
+
+    /* PRODUCT GRID SETTINGS — USED */
+    {
+      "type": "range",
+      "id": "products_to_show",
+      "min": 2,
+      "max": 20,
+      "step": 1,
+      "default": 8,
+      "label": "Products to show"
+    },
+    {
+      "type": "range",
+      "id": "columns_desktop",
+      "min": 2,
+      "max": 6,
+      "step": 1,
+      "default": 4,
+      "label": "Columns desktop"
+    },
+
+    /* VIEW ALL — STILL USED */
+    {
+      "type": "checkbox",
+      "id": "show_view_all",
+      "default": false,
+      "label": "Show view all button"
+    },
+    {
+      "type": "select",
+      "id": "view_all_style",
+      "label": "View all button style",
+      "options": [
+        { "value": "link", "label": "Link" },
+        { "value": "outline", "label": "Outline" },
+        { "value": "solid", "label": "Solid" }
+      ],
+      "default": "link"
+    },
+
+    /* SLIDER SETTINGS — DO NOT REMOVE */
+    {
+      "type": "checkbox",
+      "id": "enable_desktop_slider",
+      "label": "Enable desktop slider",
+      "default": true
+    },
+    {
+      "type": "select",
+      "id": "arrow_position",
+      "options": [
+        { "value": "top", "label": "Top" },
+        { "value": "inline", "label": "Inline" },
+        { "value": "bottom", "label": "Bottom" }
+      ],
+      "default": "top",
+      "label": "Arrow position"
+    },
+    {
+      "type": "select",
+      "id": "arrow_style",
+      "options": [
+        { "value": "button", "label": "Button" },
+        { "value": "icon", "label": "Icon" }
+      ],
+      "default": "button",
+      "label": "Arrow style"
+    },
+    {
+      "type": "color_scheme",
+      "id": "color_scheme",
+      "label": "Color scheme",
+      "default": "background-1"
+    },
+
+    /* MOBILE SETTINGS — USED */
+    {
+      "type": "select",
+      "id": "columns_mobile",
+      "default": "2",
+      "label": "Columns mobile",
+      "options": [
+        { "value": "1", "label": "1" },
+        { "value": "2", "label": "2" }
+      ]
+    },
+    {
+      "type": "checkbox",
+      "id": "swipe_on_mobile",
+      "default": true,
+      "label": "Enable swipe on mobile"
+    },
+
+    /* PADDING */
+    {
+      "type": "range",
+      "id": "padding_top",
+      "min": 0,
+      "max": 100,
+      "step": 4,
+      "unit": "px",
+      "label": "Padding top",
+      "default": 60
+    },
+    {
+      "type": "range",
+      "id": "padding_bottom",
+      "min": 0,
+      "max": 100,
+      "step": 4,
+      "unit": "px",
+      "label": "Padding bottom",
+      "default": 60
+    },
+
+    /* NEW DAYS FILTER */
+    {
+      "type": "range",
+      "id": "new_days",
+      "label": "Show products from last X days",
+      "min": 1,
+      "max": 90,
+      "step": 1,
+      "default": 30
+    }
+  ],
+  "presets": [
+    { "name": "New Arrivals" }
+  ]
+}
+{% endschema %}

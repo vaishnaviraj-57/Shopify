@@ -1,0 +1,105 @@
+{{ 'section-main-page.css' | asset_url | stylesheet_tag }}
+
+{%- style -%}
+  .section-{{ section.id }}-padding {
+    padding-top: {{ section.settings.padding_top | times: 0.75 | round: 0 }}px;
+    padding-bottom: {{ section.settings.padding_bottom | times: 0.75 | round: 0 }}px;
+  }
+
+  @media screen and (min-width: 750px) {
+    .section-{{ section.id }}-padding {
+      padding-top: {{ section.settings.padding_top }}px;
+      padding-bottom: {{ section.settings.padding_bottom }}px;
+    }
+  }
+{%- endstyle -%}
+
+<div class="page-width page-width--narrow section-{{ section.id }}-padding">
+  <h1 class="main-page-title page-title h0{% if settings.animations_reveal_on_scroll %} scroll-trigger animate--fade-in{% endif %}">
+    {{ page.title | escape }}
+  </h1>
+  <div class="rte{% if settings.animations_reveal_on_scroll %} scroll-trigger animate--slide-in{% endif %}">
+    {{ page.content }}
+   <button 
+    class="px-4 py-2 text-white bg-blue-600 rounded"
+    x-data
+    @touchend.prevent="
+      open = true;
+      $nextTick(() => {
+        const input = document.getElementById('Search');
+        if (input) {
+          input.removeAttribute('readonly');
+          setTimeout(() => input.focus(), 0);
+        }
+      });
+    "
+    @mousedown.prevent="
+      open = true;
+      $nextTick(() => {
+        const input = document.getElementById('Search');
+        if (input) {
+          input.removeAttribute('readonly');
+          setTimeout(() => input.focus(), 0);
+        }
+      });
+    "
+    x-ref="btn"
+  >
+    Open Search
+  </button>
+
+  <!-- Modal -->
+  <div 
+    x-data="{ open: false }"
+    x-show="open"
+    class="fixed inset-0 flex items-center justify-center bg-black/50"
+    style="display:none"
+  >
+    <div class="bg-white rounded-lg p-6 w-80">
+      <h2 class="mb-4 text-lg font-bold">Search</h2>
+      <input 
+        id="Search"
+        type="text"
+        class="w-full border rounded p-2"
+        placeholder="Type here..."
+        readonly
+        @focus="event.target.removeAttribute('readonly')"
+      />
+    </div>
+  </div>
+  </div>
+  </div>
+
+{% schema %}
+{
+  "name": "t:sections.main-page.name",
+  "tag": "section",
+  "class": "section",
+  "settings": [
+    {
+      "type": "header",
+      "content": "t:sections.all.padding.section_padding_heading"
+    },
+    {
+      "type": "range",
+      "id": "padding_top",
+      "min": 0,
+      "max": 100,
+      "step": 4,
+      "unit": "px",
+      "label": "t:sections.all.padding.padding_top",
+      "default": 36
+    },
+    {
+      "type": "range",
+      "id": "padding_bottom",
+      "min": 0,
+      "max": 100,
+      "step": 4,
+      "unit": "px",
+      "label": "t:sections.all.padding.padding_bottom",
+      "default": 36
+    }
+  ]
+}
+{% endschema %}

@@ -1,0 +1,179 @@
+{% comment %}
+  New Arrivals section
+  Shows products published within last X days
+  Uses hidden "All" collection
+  Fully compatible with Shopify Liquid (no push filter)
+{% endcomment %}
+
+{%- assign now = 'now' | date: "%s" | plus: 0 -%}
+{%- assign days_in_seconds = section.settings.new_days | times: 86400 | plus: 0 -%}
+{%- assign cutoff = now | minus: days_in_seconds | plus: 0 -%}
+
+{%- assign new_count = 0 -%}
+
+{%- for product in collections['all'].products -%}
+  {% assign published_time = product.published_at | date: "%s" | plus: 0 %}
+  {% if published_time > cutoff %}
+    {%- assign new_count = new_count | plus: 1 -%}
+  {% endif %}
+{%- endfor -%}
+
+<div class="new-arrivals-wrapper page-width">
+  <h2 class="new-arrivals-title">New Arrivals</h2>
+
+  {% if new_count == 0 %}
+    <p style="text-align:center;">No new products available.</p>
+  {% else %}
+
+    {% if new_count > 4 %}
+      <!-- ========== SLIDER VERSION ========== -->
+      <div class="new-arrivals-slider">
+        {% for product in collections['all'].products %}
+          {% assign published_time = product.published_at | date: "%s" | plus: 0 %}
+          {% if published_time > cutoff %}
+            <div class="slide-item">
+              <a href="{{ product.url }}">
+                {% if product.featured_image %}
+                  <img 
+                    src="{{ product.featured_image | image_url: width: 600 }}"
+                    alt="{{ product.title }}"
+                    width="{{ product.featured_image.width }}"
+                    height="{{ product.featured_image.height }}"
+                    loading="lazy"
+                  />
+                {% endif %}
+
+                <div class="product-title">{{ product.title }}</div>
+                <div class="product-price">{{ product.price | money }}</div>
+              </a>
+            </div>
+          {% endif %}
+        {% endfor %}
+      </div>
+
+    {% else %}
+      <!-- ========== GRID VERSION ========== -->
+      <div class="new-arrivals-grid">
+        {% for product in collections['all'].products %}
+          {% assign published_time = product.published_at | date: "%s" | plus: 0 %}
+          {% if published_time > cutoff %}
+            <div class="product-card">
+              <a href="{{ product.url }}">
+                {% if product.featured_image %}
+                  <img 
+                    src="{{ product.featured_image | image_url: width: 600 }}"
+                    alt="{{ product.title }}"
+                    width="{{ product.featured_image.width }}"
+                    height="{{ product.featured_image.height }}"
+                    loading="lazy"
+                  />
+                {% endif %}
+
+                <div class="product-title">{{ product.title }}</div>
+                <div class="product-price">{{ product.price | money }}</div>
+              </a>
+            </div>
+          {% endif %}
+        {% endfor %}
+      </div>
+    {% endif %}
+
+  {% endif %}
+</div>
+
+<style>
+.new-arrivals-wrapper {
+  margin: 40px auto;
+}
+
+.new-arrivals-title {
+  text-align: center;
+  margin-bottom: 25px;
+  font-size: 28px;
+  font-weight: 700;
+}
+
+/* GRID */
+.new-arrivals-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 25px;
+}
+
+/* SLIDER */
+.new-arrivals-slider {
+  display: flex;
+  overflow-x: auto;
+  gap: 20px;
+  scroll-snap-type: x mandatory;
+  padding-bottom: 10px;
+}
+.new-arrivals-slider::-webkit-scrollbar {
+  display: none;
+}
+.slide-item {
+  flex: 0 0 250px;
+  scroll-snap-align: start;
+}
+
+/* Images */
+.product-card img,
+.slide-item img {
+  width: 100%;
+  border-radius: 10px;
+}
+
+.product-title {
+  margin-top: 10px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.product-price {
+  margin-top: 5px;
+  font-size: 15px;
+  font-weight: 500;
+}
+
+/* RESPONSIVE */
+@media(max-width: 768px) {
+  .new-arrivals-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media(max-width: 480px) {
+  .new-arrivals-grid {
+    grid-template-columns: repeat(1, 1fr);
+  }
+}
+</style>
+
+{% schema %}
+{
+  "name": "New Arrival Products",
+  "settings": [
+    {
+      "type": "range",
+      "id": "new_days",
+      "label": "Show products from last X days",
+      "default": 30,
+      "min": 1,
+      "max": 90,
+      "step": 1
+    },
+    {
+      "type": "range",
+      "id": "limit",
+      "label": "Maximum products to show",
+      "min": 2,
+      "max": 40,
+      "default": 12
+    }
+  ],
+  "presets": [
+    {
+      "name": "New Arrival Products"
+    }
+  ]
+}
+{% endschema %}
