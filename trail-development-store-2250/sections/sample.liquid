@@ -1,71 +1,52 @@
-<div class="featured-products">
+<div>
 
-  <h1>{{ section.settings.title }}</h1>
+<h1>{{ section.settings.title }}</h1>
 
-  {% for product in collections.all.products limit: 20 %}
+{% for product in collections.all.products limit: 20 %}
 
-    <div class="product-card">
+<div class="card">
 
-      <img src="{{ product.featured_image | image_url }}"/>
+<img src="{{ product.featured_image | image_url }}">
 
-      <div style="color:red;font-size:14px;">
-        {{ product.title }}
-      </div>
+<div style="color:red">
+  {{ product.title }}
+</div>
 
-      <div>
-        {{ product.description }}
-      </div>
+<button onclick="window.location='{{ product.url }}'">
+Buy
+</button>
 
-      <button onclick="window.location='{{ product.url }}'">
-        Buy Now
-      </button>
+</div>
 
-    </div>
-
-  {% endfor %}
+{% endfor %}
 
 </div>
 
 <style>
-.featured-products{
-padding:20px;
-}
-
-.product-card{
-margin-bottom:30px;
-}
-
-.product-card img{
-width:100%;
-}
-
-.product-card div{
-font-size:14px !important;
+.card div {
+  font-size: 14px !important;
 }
 </style>
 
 <script>
-
-document.querySelectorAll('.product-card').forEach(function(card){
-  console.log(card)
-})
-
+document.querySelectorAll(".card").forEach((c) => {
+  console.log(c);
+});
 </script>
 
 {% schema %}
 {
-  "name": "Copilot Review Test",
+  "name": "Test Section",
   "settings": [
     {
       "type": "text",
       "id": "title",
-      "label": "Section Title",
-      "default": "Featured Products"
+      "label": "Title"
     }
   ],
   "presets": [
     {
-      "name": "Copilot Review Test"
+      "name": "Test Section"
     }
   ]
 }
