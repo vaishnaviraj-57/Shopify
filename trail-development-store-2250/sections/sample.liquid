@@ -1,0 +1,53 @@
+<div class="test">
+
+<h1>{{ section.settings.title }}</h1>
+
+{% for product in collections.all.products limit: 20 %}
+
+<div class="card">
+
+<img src="{{ product.featured_image | image_url }}">
+
+<div style="color:red">
+  {{ product.title }}
+</div>
+
+<button onclick="window.location='{{ product.url }}'">
+Buy
+</button>
+
+</div>
+
+{% endfor %}
+
+</div>
+
+<style>
+.card div {
+  font-size: 14px !important;
+}
+</style>
+
+<script>
+document.querySelectorAll(".card").forEach((c) => {
+  console.log(c);
+});
+</script>
+
+{% schema %}
+{
+  "name": "Test Section",
+  "settings": [
+    {
+      "type": "text",
+      "id": "title",
+      "label": "Title"
+    }
+  ],
+  "presets": [
+    {
+      "name": "Test Section"
+    }
+  ]
+}
+{% endschema %}
