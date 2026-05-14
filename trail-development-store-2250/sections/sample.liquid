@@ -1,0 +1,72 @@
+<div class="featured-products">
+
+  <h1>{{ section.settings.title }}</h1>
+
+  {% for product in collections.all.products limit: 20 %}
+
+    <div class="product-card">
+
+      <img src="{{ product.featured_image | image_url }}"/>
+
+      <div style="color:red;font-size:14px;">
+        {{ product.title }}
+      </div>
+
+      <div>
+        {{ product.description }}
+      </div>
+
+      <button onclick="window.location='{{ product.url }}'">
+        Buy Now
+      </button>
+
+    </div>
+
+  {% endfor %}
+
+</div>
+
+<style>
+.featured-products{
+padding:20px;
+}
+
+.product-card{
+margin-bottom:30px;
+}
+
+.product-card img{
+width:100%;
+}
+
+.product-card div{
+font-size:14px !important;
+}
+</style>
+
+<script>
+
+document.querySelectorAll('.product-card').forEach(function(card){
+  console.log(card)
+})
+
+</script>
+
+{% schema %}
+{
+  "name": "Copilot Review Test",
+  "settings": [
+    {
+      "type": "text",
+      "id": "title",
+      "label": "Section Title",
+      "default": "Featured Products"
+    }
+  ],
+  "presets": [
+    {
+      "name": "Copilot Review Test"
+    }
+  ]
+}
+{% endschema %}
