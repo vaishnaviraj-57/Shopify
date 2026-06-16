@@ -1,0 +1,65 @@
+.sticky-atc {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background-color: rgb(var(--color-background));
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+  z-index: 100;
+  transform: translateY(100%);
+  transition: transform 0.3s ease-in-out;
+  padding: 1rem 0;
+}
+
+.sticky-atc--visible {
+  transform: translateY(0);
+}
+
+.sticky-atc__container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2rem;
+}
+
+.sticky-atc__info {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.sticky-atc__title {
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sticky-atc__price {
+  margin-top: 0.2rem;
+}
+
+.sticky-atc__actions {
+  flex-shrink: 0;
+}
+
+.sticky-atc__button {
+  margin: 0;
+  min-width: 200px;
+}
+
+@media screen and (max-width: 749px) {
+  .sticky-atc__container {
+    gap: 1rem;
+  }
+
+  .sticky-atc__title {
+    font-size: 1.4rem;
+  }
+
+  .sticky-atc__button {
+    min-width: 120px;
+    padding: 0 1.5rem;
+  }
+}
